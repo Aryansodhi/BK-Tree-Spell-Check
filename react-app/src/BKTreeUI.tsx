@@ -10,6 +10,9 @@ const BKTreeUI: React.FC = () => {
   const [showAddPopup, setShowAddPopup] = useState<boolean>(false);
   const [vibrate, setVibrate] = useState<boolean>(false);
 
+  // Use different base URL depending on the environment (local or production)
+  const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5002' : 'https://<your-vercel-deployment-url>.vercel.app';
+
   const handleSearch = async () => {
     setResults(null);
     setError(null);
@@ -27,7 +30,7 @@ const BKTreeUI: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5002/search", {
+      const response = await fetch(`${baseUrl}/api/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word, tolerance: Number(tolerance) }),
@@ -53,7 +56,7 @@ const BKTreeUI: React.FC = () => {
 
   const handleAddWord = async () => {
     try {
-      const response = await fetch("http://localhost:5002/add-word", {
+      const response = await fetch(`${baseUrl}/api/add-word`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word }),
@@ -87,7 +90,7 @@ const BKTreeUI: React.FC = () => {
   const handleDownloadDictionary = () => {
     if (window.confirm("Do you want to download and view the dictionary file?")) {
       const link = document.createElement("a");
-      link.href = "http://localhost:5002/download-dictionary";
+      link.href = `${baseUrl}/api/download-dictionary`;
       link.download = "dictionary.txt";
       link.click();
     }
@@ -176,4 +179,5 @@ const BKTreeUI: React.FC = () => {
 };
 
 export default BKTreeUI;
+
 
