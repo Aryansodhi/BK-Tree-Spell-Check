@@ -16,8 +16,9 @@ app.post('/api/search', (req, res) => {
 
   console.log(`Received search request with word: ${word}, tolerance: ${tolerance}`);
 
-  const exePath = path.resolve(__dirname, 'bk_tree.exe'); // Path to the executable
-  const command = `"${exePath}" ${word} ${tolerance}`; // Command to execute the .exe file
+  const exePath = path.resolve(__dirname, 'bk_tree'); // Linux binary, no .exe
+  const command = `"${exePath}" ${word} ${tolerance}`;
+
 
   console.log(`Executing command: ${command}`);
 
@@ -52,8 +53,8 @@ app.post('/api/add-word', (req, res) => {
 
   console.log(`Received request to add word: ${word}`);
 
-  const exePath = path.resolve(__dirname, 'bk_tree.exe'); // Path to the executable
-  const command = `"${exePath}" ${word} 0 add`; // Command to add the word to the dictionary
+  const exePath = path.resolve(__dirname, 'bk_tree'); // Linux binary, no .exe
+  const command = `"${exePath}" ${word} ${tolerance}`;
 
   console.log(`Executing command: ${command}`);
 
