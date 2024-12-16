@@ -11,7 +11,7 @@ const BKTreeUI: React.FC = () => {
   const [vibrate, setVibrate] = useState<boolean>(false);
 
   // Use different base URL depending on the environment (local or production)
-  const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5002' : 'https://<your-vercel-deployment-url>.vercel.app';
+  const baseUrl = 'https://bk-tree-spell-check.onrender.com';
 
   const handleSearch = async () => {
     setResults(null);
