@@ -19,7 +19,6 @@ app.post('/api/search', (req, res) => {
   const exePath = path.resolve(__dirname, 'bk_tree'); // Linux binary, no .exe
   const command = `"${exePath}" ${word} ${tolerance}`;
 
-
   console.log(`Executing command: ${command}`);
 
   exec(command, (error, stdout, stderr) => {
@@ -54,7 +53,7 @@ app.post('/api/add-word', (req, res) => {
   console.log(`Received request to add word: ${word}`);
 
   const exePath = path.resolve(__dirname, 'bk_tree'); // Linux binary, no .exe
-  const command = `"${exePath}" ${word} ${tolerance}`;
+  const command = `"${exePath}" ${word} 0 add`;  // The add operation doesn't need tolerance
 
   console.log(`Executing command: ${command}`);
 
@@ -94,6 +93,3 @@ app.all('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-
-
