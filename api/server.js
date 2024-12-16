@@ -1,94 +1,98 @@
-// api/server.js
-
+const express = require('express');
+const cors = require('cors');
 const { exec } = require('child_process');
 const path = require('path');
-const cors = require('cors');
 
-// The handler for Vercel's Serverless Function
-module.exports = async (req, res) => {
-  // Enable CORS for all origins (you can specify specific origins if needed)
-  cors()(req, res, () => {});
+const app = express();
+const PORT = process.env.PORT || 5002; // Use Render's dynamic port or default to 5000
 
-  // Handling Search Request
-  if (req.method === 'POST' && req.url === '/api/search') {
-    const { word, tolerance } = req.body;  // Extract word and tolerance from the body
+// Middleware
+app.use(express.json());
+app.use(cors()); // Enable CORS for all origins
 
-    console.log(`Received search request with word: ${word}, tolerance: ${tolerance}`);
+// Search endpoint
+app.post('/api/search', (req, res) => {
+  const { word, tolerance } = req.body;
 
-    const exePath = path.resolve(__dirname, 'bk_tree.exe');  // Path to your executable
-    const command = `"${exePath}" ${word} ${tolerance}`;  // Command to run the executable
+  console.log(`Received search request with word: ${word}, tolerance: ${tolerance}`);
 
-    console.log(`Executing command: ${command}`);
+  const exePath = path.resolve(__dirname, 'bk_tree.exe'); // Path to the executable
+  const command = `"${exePath}" ${word} ${tolerance}`; // Command to execute the .exe file
 
-    // Execute the command and capture output
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error("Error executing C program:", error.message);
-        return res.status(500).json({ error: 'Execution error', details: error.message });
-      }
+  console.log(`Executing command: ${command}`);
 
-      if (stderr) {
-        console.error("Error output from C program:", stderr);
-        return res.status(500).json({ error: 'Command error', details: stderr });
-      }
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error('Error executing C program:', error.message);
+      return res.status(500).json({ error: 'Execution error', details: error.message });
+    }
 
-      console.log("Command output:", stdout);
+    if (stderr) {
+      console.error('Error output from C program:', stderr);
+      return res.status(500).json({ error: 'Command error', details: stderr });
+    }
 
-      // Parse the output to get tolerance and matching words
-      const match = stdout.trim().match(/^Tolerance (\d+): (.+)$/);
-      if (match) {
-        const tolerance = parseInt(match[1], 10);  // Extract tolerance level
-        const words = match[2].split(", ").map(word => word.trim());  // Extract matching words
-        return res.json({ tolerance, words });  // Return the result as JSON
-      }
+    console.log('Command output:', stdout);
 
-      return res.status(404).json({ error: 'No words found within the given tolerance.' });
-    });
-  }
+    // Parse the output to get tolerance and matching words
+    const match = stdout.trim().match(/^Tolerance (\d+): (.+)$/);
+    if (match) {
+      const tolerance = parseInt(match[1], 10); // Extract tolerance level
+      const words = match[2].split(', ').map((word) => word.trim()); // Extract matching words
+      return res.json({ tolerance, words }); // Return the result as JSON
+    }
 
-  // Handle Add Word to Dictionary Request
-  else if (req.method === 'POST' && req.url === '/api/add-word') {
-    const { word } = req.body;  // Extract word from the body
+    return res.status(404).json({ error: 'No words found within the given tolerance.' });
+  });
+});
 
-    console.log(`Received request to add word: ${word}`);
+// Add word to dictionary endpoint
+app.post('/api/add-word', (req, res) => {
+  const { word } = req.body;
 
-    const exePath = path.resolve(__dirname, 'bk_tree.exe');  // Path to your executable
-    const command = `"${exePath}" ${word} 0 add`;  // Command to add word to dictionary
+  console.log(`Received request to add word: ${word}`);
 
-    console.log(`Executing command: ${command}`);
+  const exePath = path.resolve(__dirname, 'bk_tree.exe'); // Path to the executable
+  const command = `"${exePath}" ${word} 0 add`; // Command to add the word to the dictionary
 
-    // Execute the command and capture output
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error("Error adding word to dictionary:", error.message);
-        return res.status(500).json({ error: 'Failed to add word to dictionary.' });
-      }
+  console.log(`Executing command: ${command}`);
 
-      if (stderr) {
-        console.error("Error output from C program:", stderr);
-        return res.status(500).json({ error: 'Command error', details: stderr });
-      }
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error('Error adding word to dictionary:', error.message);
+      return res.status(500).json({ error: 'Failed to add word to dictionary.' });
+    }
 
-      console.log("Command output:", stdout);
-      res.json({ message: `Word '${word}' added successfully.` });
-    });
-  }
+    if (stderr) {
+      console.error('Error output from C program:', stderr);
+      return res.status(500).json({ error: 'Command error', details: stderr });
+    }
 
-  // Serve the dictionary file
-  else if (req.method === 'GET' && req.url === '/api/download-dictionary') {
-    const dictionaryPath = path.resolve(__dirname, 'dictionary.txt');
-    res.download(dictionaryPath, 'dictionary.txt', (err) => {
-      if (err) {
-        console.error("Error sending file:", err);
-        res.status(500).send("Error downloading dictionary file.");
-      }
-    });
-  } 
+    console.log('Command output:', stdout);
+    res.json({ message: `Word '${word}' added successfully.` });
+  });
+});
 
-  // Fallback for unsupported routes
-  else {
-    res.status(404).send('Not Found');
-  }
-};
+// Serve the dictionary file
+app.get('/api/download-dictionary', (req, res) => {
+  const dictionaryPath = path.resolve(__dirname, 'dictionary.txt');
+  res.download(dictionaryPath, 'dictionary.txt', (err) => {
+    if (err) {
+      console.error('Error sending file:', err);
+      res.status(500).send('Error downloading dictionary file.');
+    }
+  });
+});
+
+// Handle unsupported routes
+app.all('*', (req, res) => {
+  res.status(404).send('Not Found');
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 
 
